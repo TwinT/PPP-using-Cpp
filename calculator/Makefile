@@ -1,5 +1,6 @@
-CPPFLAGS=-Wall -Wextra -Weffc++ -g -std=c++14
 CPP = g++
+INC_PATH = -I../
+CPPFLAGS= -Wall -Wextra -Weffc++ -g -std=c++14 $(INC_PATH)
 
 TARGETS= calculator
 
@@ -9,7 +10,7 @@ all: $(TARGETS)
 #     $< refers to the file being processed (i.e., compiled or linked)
 #     $@ refers to the generated file
 %.o: %.cpp
-	$(CPP) $(CPPFLAGS) -c $< -o $@
+	$(CPP) -c $(CPPFLAGS) -o $@ $<
 
 
 .PHONY: clean
