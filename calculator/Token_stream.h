@@ -2,15 +2,16 @@
 #define TOKEN_STREAM_H
 
 #include "std_lib_facilities.h"
+#include "Token.h"
 
 const char number{'8'};
 const char print{';'};
 const char quit{'q'};
 const char prompt{'>'};
 const char result{'='};
-const char name = 'a';        // name token
-const char let = 'L';         // declaration token
-const string declkey = "let"; // declaration keyword
+const char name{'a'};        // name token
+const char let{'L'};         // declaration token
+const string declkey ={"let"}; // declaration keyword
 
 class Token_stream {
 public:

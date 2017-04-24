@@ -14,10 +14,14 @@
           Input from cin; output to cout.
           The grammar for input is:
 
-          Statement:
-                    Expression
+          Calculation:
+                    Statement
                     Print
                     Quit
+                    Calculation Statement
+          Statement:
+                    Declaration
+                    Expression
           Print:
                     ;
 
@@ -50,112 +54,119 @@
 #include "Variable.h"
 #include "std_lib_facilities.h"
 
-Token_stream ts; // provides get() and putback()
+Token_stream ts;  // provides get() and putback()
 
-double expression(); // declaration so that primary() can call expression()
+double expression();  // declaration so that primary() can call expression()
 double declaration();
 
 //------------------------------------------------------------------------------
 // deal with numbers and parentheses
 double primary() {
-  Token t = ts.get();
-  switch (t.kind) {
-  case '(': // handle '(' expression ')'
-  {
-    double d = expression();
-    t = ts.get();
-    if (t.kind != ')')
-      error("')' expected");
-    return d;
-  }
-  case '{': // handle '{' expression '}'
-  {
-    double d = expression();
-    t = ts.get();
-    if (t.kind != '}')
-      error("'}' expected");
-    return d;
-  }
-  case number:
-    return t.value; // return the number's value
-  case '+':
-    return primary();
-  case '-':
-    return -primary();
-  default:
-    error("primary expected");
-    return 0;
-  }
+    Token t = ts.get();
+    switch (t.kind) {
+        case '(':  // handle '(' expression ')'
+        {
+            double d = expression();
+            t = ts.get();
+            if (t.kind != ')') error("')' expected");
+            return d;
+        }
+        case '{':  // handle '{' expression '}'
+        {
+            double d = expression();
+            t = ts.get();
+            if (t.kind != '}') error("'}' expected");
+            return d;
+        }
+        case number:
+            return t.value;  // return the number's value
+        case name: {
+            Token next = ts.get();
+            if (next.kind == '=') {  // handle name = expression
+                double d = expression();
+                set_value(t.name, d);
+                return d;
+            } else {
+                ts.putback(next);  // not an assignment: return the value
+                return get_value(t.name);  // return the variable's value
+            }
+        }
+        case '+':
+            return primary();
+        case '-':
+            return -primary();
+        default:
+            error("primary expected");
+            return 0;
+    }
 }
 
 //------------------------------------------------------------------------------
 
 // deal with *, /, and %
 double term() {
-  double left = primary();
-  Token t = ts.get(); // get the next token from token stream
+    double left = primary();
+    Token t = ts.get();  // get the next token from token stream
 
-  while (true) {
-    switch (t.kind) {
-    case '*':
-      left *= primary();
-      t = ts.get();
-      break;
-    case '/': {
-      double d = primary();
-      if (d == 0)
-        error("divide by zero");
-      left /= d;
-      t = ts.get();
-    } break;
-    case '%': {
-      double d = primary();
-      if (d == 0)
-        error("divide by zero");
-      left = fmod(left, d);
-      t = ts.get();
-    } break;
-    default:
-      ts.putback(t); // put t back into the token stream
-      return left;
+    while (true) {
+        switch (t.kind) {
+            case '*':
+                left *= primary();
+                t = ts.get();
+                break;
+            case '/': {
+                double d = primary();
+                if (d == 0) error("divide by zero");
+                left /= d;
+                t = ts.get();
+            } break;
+            case '%': {
+                double d = primary();
+                if (d == 0) error("divide by zero");
+                left = fmod(left, d);
+                t = ts.get();
+            } break;
+            default:
+                ts.putback(t);  // put t back into the token stream
+                return left;
+        }
     }
-  }
 }
 
 //------------------------------------------------------------------------------
 
 // deal with + and -
 double expression() {
-  double left = term(); // read and evaluate a Term
-  Token t = ts.get();   // get the next token from token stream
+    double left = term();  // read and evaluate a Term
+    Token t = ts.get();    // get the next token from token stream
 
-  while (true) {
-    switch (t.kind) {
-    case '+':
-      left += term(); // evaluate Term and add
-      t = ts.get();
-      break;
-    case '-':
-      left += term(); // evaluate Term and subtract
-      t = ts.get();
-      break;
-    default:
-      ts.putback(t); // put t back into the token stream
-      return left;   // finally: no more + or -: return the answer
+    while (true) {
+        switch (t.kind) {
+            case '+':
+                left += term();  // evaluate Term and add
+                t = ts.get();
+                break;
+            case '-':
+                left += term();  // evaluate Term and subtract
+                t = ts.get();
+                break;
+            default:
+                ts.putback(t);  // put t back into the token stream
+                return left;    // finally: no more + or -: return the answer
+        }
     }
-  }
 }
 
 //------------------------------------------------------------------------------
 double statement() {
-  Token t = ts.get();
-  switch (t.kind) {
-  case let:
-    return declaration();
-  default:
-    ts.putback(t);
-    return expression();
-  }
+    Token t = ts.get();
+    switch (t.kind) {
+        case let:
+            return declaration();
+        default:
+            ts.putback(t);
+            return expression();
+    }
 }
 //------------------------------------------------------------------------------
 double declaration()
@@ -163,48 +174,46 @@ double declaration()
 // handle: name = expression
 // declare a variable called "name” with the initial value "expression”
 {
-  Token t = ts.get();
-  if (t.kind != name)
-    error("name expected in declaration");
-  string var_name = t.name;
+    Token t = ts.get();
+    if (t.kind != name) error("name expected in declaration");
+    string var_name = t.name;
 
-  Token t2 = ts.get();
-  if (t2.kind != '=')
-    error("= missing in declaration of ", var_name);
+    Token t2 = ts.get();
+    if (t2.kind != '=') error("= missing in declaration of ", var_name);
 
-  double d = expression();
-  define_name(var_name, d);
-  return d;
+    double d = expression();
+    define_name(var_name, d);
+    return d;
 }
 //------------------------------------------------------------------------------
 void calculate() {
-  while (cin) {
-    cout << prompt;
-    Token t = ts.get();
-    if (t.kind == print)
-      t = ts.get(); // eat ';'
-    if (t.kind == quit)
-      return;
-    ts.putback(t);
-    cout << result << statement() << '\n';
-  }
+    while (cin) {
+        cout << prompt;
+        Token t = ts.get();
+        if (t.kind == print) t = ts.get();  // eat ';'
+        if (t.kind == quit) return;
+        ts.putback(t);
+        cout << result << statement() << '\n';
+    }
 }
 //------------------------------------------------------------------------------
 
 int main() {
-  cout << "Welcome to our simple calculator.\n";
-  cout << "Please enter expressions using floating-point numbers.\n";
-  cout << "Operators: + - * / () {}\n";
-  cout << "q for exit\n";
+    cout << "Welcome to our simple calculator.\n";
+    cout << "Please enter expressions using floating-point numbers.\n";
+    cout << "Operators: + - * / () {}\n";
+    cout << "q for exit\n";
 
-  try {
-    calculate();
-  } catch (exception &e) {
-    cerr << "error: " << e.what() << '\n';
-    return 1;
-  } catch (...) {
-    cerr << "exception!\n";
-    return 2;
-  }
+    try {
+        define_name("pi", 3.1415926535);
+        define_name("e", 2.7182818284);
+        calculate();
+    } catch (exception &e) {
+        cerr << "error: " << e.what() << '\n';
+        return 1;
+    } catch (...) {
+        cerr << "exception!\n";
+        return 2;
+    }
 }
 //------------------------------------------------------------------------------

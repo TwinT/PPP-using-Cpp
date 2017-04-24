@@ -1,9 +1,9 @@
 CPP = g++
-INC_PATH = -I../
-CPPFLAGS= -Wall -Wextra -Weffc++ -g -std=c++14 
+INC_PATH= -I../
+CPPFLAGS= -Wall -Wextra -Weffc++ -g -std=c++14 $(INC_PATH)
 
 TARGET= calculator
-SRCS= *.cpp
+SRCS= calculator.cpp Token_stream.cpp Variable.cpp
 OBJS=$(subst .cpp,.o,$(SRCS))
 
 ($TARGET): $(OBJS)
@@ -13,10 +13,10 @@ OBJS=$(subst .cpp,.o,$(SRCS))
 #     $< refers to the file being processed (i.e., compiled or linked)
 #     $@ refers to the generated file
 
-%.o: %.cpp
-	$(CPP) -c $(CPPFLAGS) $(INC_PATH) -o $@ $<
-
+calculator.o: Token.h Token_stream.h Variable.h
+Token_stream.o: Token_stream.h Token.h
+Variable.o: Variable.h
 
 .PHONY: clean
 clean:
-	rm -f $(TARGETS) *.o
+	rm -f $(TARGET) *.o

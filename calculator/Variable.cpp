@@ -10,6 +10,7 @@ double get_value(string s)
     if (v.name == s)
       return v.value;
   error("get: undefined variable ", s);
+  return 0;
 }
 
 void set_value(string s, double d)
